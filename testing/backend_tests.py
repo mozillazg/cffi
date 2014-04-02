@@ -1332,6 +1332,27 @@ class BackendTests:
         assert ffi.sizeof("char[FF]") == 4
         assert ffi.sizeof("char[GG]") == 4
 
+    def test_enum_arithmetic_value(self):
+        ffi = FFI(backend=self.Backend())
+        ffi.cdef("""
+            enum e {
+                AA, BB=2,
+                CC=5-2, DD=(BB+4)*2, EE=BB+7/2,
+                FF=~BB, GG=(BB+10)>>1, HH=3+BB<<2,
+                II=!AA, JJ=BB&&CC, KK=CC||0, LL=0x12 && 0
+            };
+        """)
+        assert ffi.string(ffi.cast("enum e", 3)) == "CC"
+        assert ffi.string(ffi.cast("enum e", 12)) == "DD"
+        assert ffi.string(ffi.cast("enum e", 5)) == "EE"
+        assert ffi.string(ffi.cast("enum e", -3)) == "FF"
+        assert ffi.string(ffi.cast("enum e", 6)) == "GG"
+        assert ffi.string(ffi.cast("enum e", 20)) == "HH"
+        assert ffi.sizeof("char[II+2]") == 1+2
+        assert ffi.sizeof("char[JJ+2]") == 1+2
+        assert ffi.sizeof("char[KK+2]") == 1+2
+        assert ffi.sizeof("char[LL+2]") == 0+2
+
     def test_nested_anonymous_struct(self):
         ffi = FFI(backend=self.Backend())
         ffi.cdef("""

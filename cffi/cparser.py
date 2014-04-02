@@ -16,6 +16,21 @@ try:
 except ImportError:
     lock = None
 
+import operator
+BINARY_OPERATOR_MAP = {
+    "+": operator.add,
+    "/": operator.floordiv,
+    "&": operator.and_,
+    "^": operator.xor,
+    "|": operator.or_,
+    "**": operator.pow,
+    "<<": operator.lshift,
+    "%": operator.mod,
+    "*": operator.mul,
+    ">>": operator.rshift,
+    "-": operator.sub,
+}
+
 _r_comment = re.compile(r"/\*.*?\*/|//.*?$", re.DOTALL | re.MULTILINE)
 _r_define  = re.compile(r"^\s*#\s*define\s+([A-Za-z_][A-Za-z_0-9]*)\s+(.*?)$",
                         re.MULTILINE)
@@ -512,14 +527,33 @@ class Parser(object):
         if isinstance(exprnode, pycparser.c_ast.Constant):
             return int(exprnode.value, 0)
         #
-        if (isinstance(exprnode, pycparser.c_ast.UnaryOp) and
-                exprnode.op == '-'):
-            return -self._parse_constant(exprnode.expr)
+        if isinstance(exprnode, pycparser.c_ast.UnaryOp):
+            if exprnode.op == '-':
+                return -self._parse_constant(exprnode.expr)
+            if exprnode.op == '~':
+                return ~self._parse_constant(exprnode.expr)
+            if exprnode.op == '!':
+                return int(not self._parse_constant(exprnode.expr))
         # load previously defined int constant
         if (isinstance(exprnode, pycparser.c_ast.ID) and
                 exprnode.name in self._int_constants):
             return self._int_constants[exprnode.name]
         #
+        if (isinstance(exprnode, pycparser.c_ast.BinaryOp)):
+            op = exprnode.op
+            if op in BINARY_OPERATOR_MAP:
+                left = self._parse_constant(exprnode.left)
+                right = self._parse_constant(exprnode.right)
+                return BINARY_OPERATOR_MAP[op](left, right)
+            elif op in {"&&", "||"}:
+                left = self._parse_constant(exprnode.left)
+                right = self._parse_constant(exprnode.right)
+                # should return 0 or 1, not short cut left
+                if op == "&&":
+                    return int(bool(left and right))
+                elif op == "||":
+                    return int(bool(left or right))
+
         if partial_length_ok:
             if (isinstance(exprnode, pycparser.c_ast.ID) and
                     exprnode.name == '__dotdotdotarray__'):
