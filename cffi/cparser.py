@@ -19,16 +19,19 @@ except ImportError:
 import operator
 BINARY_OPERATOR_MAP = {
     "+": operator.add,
-    "/": operator.floordiv,
+    "/": operator.floordiv, # integer div
     "&": operator.and_,
     "^": operator.xor,
     "|": operator.or_,
-    "**": operator.pow,
     "<<": operator.lshift,
     "%": operator.mod,
     "*": operator.mul,
     ">>": operator.rshift,
     "-": operator.sub,
+}
+
+BINARY_OPERATOR_FLOAT_MAP = {
+    "/": operator.truediv, # float div
 }
 
 _r_comment = re.compile(r"/\*.*?\*/|//.*?$", re.DOTALL | re.MULTILINE)
@@ -544,7 +547,15 @@ class Parser(object):
             if op in BINARY_OPERATOR_MAP:
                 left = self._parse_constant(exprnode.left)
                 right = self._parse_constant(exprnode.right)
-                return BINARY_OPERATOR_MAP[op](left, right)
+                # default floordiv for "/", for float constant, use truediv
+                if ((isinstance(left, float) or
+                        isinstance(right, float)) and
+                        op in BINARY_OPERATOR_FLOAT_MAP):
+                    pyop = BINARY_OPERATOR_FLOAT_MAP[op]
+                else:
+                    pyop = BINARY_OPERATOR_MAP[op]
+                return pyop(left, right)
+
             elif op in {"&&", "||"}:
                 left = self._parse_constant(exprnode.left)
                 right = self._parse_constant(exprnode.right)
