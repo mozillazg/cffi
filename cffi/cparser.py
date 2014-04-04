@@ -30,10 +30,6 @@ BINARY_OPERATOR_MAP = {
     "-": operator.sub,
 }
 
-BINARY_OPERATOR_FLOAT_MAP = {
-    "/": operator.truediv, # float div
-}
-
 _r_comment = re.compile(r"/\*.*?\*/|//.*?$", re.DOTALL | re.MULTILINE)
 _r_define  = re.compile(r"^\s*#\s*define\s+([A-Za-z_][A-Za-z_0-9]*)\s+(.*?)$",
                         re.MULTILINE)
@@ -527,6 +523,8 @@ class Parser(object):
     def _parse_constant(self, exprnode, partial_length_ok=False):
         # for now, limited to expressions that are an immediate number
         # or negative number
+        # Assume integer constant only now. If float constant is added,
+        # should also take care of BinaryOp for float
         if isinstance(exprnode, pycparser.c_ast.Constant):
             return int(exprnode.value, 0)
         #
@@ -545,17 +543,10 @@ class Parser(object):
         if (isinstance(exprnode, pycparser.c_ast.BinaryOp)):
             op = exprnode.op
             if op in BINARY_OPERATOR_MAP:
+                # Assume integer arithmetic, use floordiv for "/"
                 left = self._parse_constant(exprnode.left)
                 right = self._parse_constant(exprnode.right)
-                # default floordiv for "/", for float constant, use truediv
-                if ((isinstance(left, float) or
-                        isinstance(right, float)) and
-                        op in BINARY_OPERATOR_FLOAT_MAP):
-                    pyop = BINARY_OPERATOR_FLOAT_MAP[op]
-                else:
-                    pyop = BINARY_OPERATOR_MAP[op]
-                return pyop(left, right)
-
+                return BINARY_OPERATOR_MAP[op](left, right)
             elif op in {"&&", "||"}:
                 left = self._parse_constant(exprnode.left)
                 right = self._parse_constant(exprnode.right)
