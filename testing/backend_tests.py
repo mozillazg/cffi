@@ -1339,8 +1339,8 @@ class BackendTests:
                 AA, BB=2,
                 CC=5-2, DD=(2+4)*2, EE=2+7/2,
                 FF=~2, GG=(2+10)>>1, HH=3+2<<2,
-                II=!0, JJ=2&&3, KK=3||0, LL=0x12 && 0
-
+                II=!0, JJ=2&&3, KK=3||0, LL=0x12 && 0,
+                MM= 1 > 2 ? 14: 15, NN= 1 <= 2 ? 14: 15
             };
         """)
         assert ffi.string(ffi.cast("enum e", 3)) == "CC"
@@ -1349,6 +1349,9 @@ class BackendTests:
         assert ffi.string(ffi.cast("enum e", -3)) == "FF"
         assert ffi.string(ffi.cast("enum e", 6)) == "GG"
         assert ffi.string(ffi.cast("enum e", 20)) == "HH"
+        assert ffi.string(ffi.cast("enum e", 15)) == "MM"
+        assert ffi.string(ffi.cast("enum e", 14)) == "NN"
+
         assert ffi.sizeof("char[II+2]") == 1+2
         assert ffi.sizeof("char[JJ+2]") == 1+2
         assert ffi.sizeof("char[KK+2]") == 1+2

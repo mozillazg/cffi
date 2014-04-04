@@ -28,6 +28,12 @@ BINARY_OPERATOR_MAP = {
     "*": operator.mul,
     ">>": operator.rshift,
     "-": operator.sub,
+    "<": operator.lt,
+    "<=": operator.le,
+    "==": operator.eq,
+    "!=": operator.ne,
+    ">=": operator.ge,
+    ">": operator.gt,
 }
 
 _r_comment = re.compile(r"/\*.*?\*/|//.*?$", re.DOTALL | re.MULTILINE)
@@ -546,7 +552,10 @@ class Parser(object):
                 # Assume integer arithmetic, use floordiv for "/"
                 left = self._parse_constant(exprnode.left)
                 right = self._parse_constant(exprnode.right)
-                return BINARY_OPERATOR_MAP[op](left, right)
+                pyvalue = BINARY_OPERATOR_MAP[op](left, right)
+                if op in {"<", "<=", "==", "!=", ">", ">="}:
+                    pyvalue = int(pyvalue)
+                return pyvalue
             elif op in {"&&", "||"}:
                 left = self._parse_constant(exprnode.left)
                 right = self._parse_constant(exprnode.right)
@@ -555,7 +564,15 @@ class Parser(object):
                     return int(bool(left and right))
                 elif op == "||":
                     return int(bool(left or right))
-
+        #
+        if isinstance(exprnode, pycparser.c_ast.TernaryOp):
+            cond_v = self._parse_constant(exprnode.cond)
+            if cond_v:
+                pyvalue = self._parse_constant(exprnode.iftrue)
+            else:
+                pyvalue = self._parse_constant(exprnode.iffalse)
+            return pyvalue
+        #
         if partial_length_ok:
             if (isinstance(exprnode, pycparser.c_ast.ID) and
                     exprnode.name == '__dotdotdotarray__'):
