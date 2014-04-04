@@ -1337,9 +1337,10 @@ class BackendTests:
         ffi.cdef("""
             enum e {
                 AA, BB=2,
-                CC=5-2, DD=(BB+4)*2, EE=BB+7/2,
-                FF=~BB, GG=(BB+10)>>1, HH=3+BB<<2,
-                II=!AA, JJ=BB&&CC, KK=CC||0, LL=0x12 && 0
+                CC=5-2, DD=(2+4)*2, EE=2+7/2,
+                FF=~2, GG=(2+10)>>1, HH=3+2<<2,
+                II=!0, JJ=2&&3, KK=3||0, LL=0x12 && 0
+
             };
         """)
         assert ffi.string(ffi.cast("enum e", 3)) == "CC"
