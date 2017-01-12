@@ -778,6 +778,12 @@ class Parser(object):
         if (isinstance(exprnode, pycparser.c_ast.UnaryOp) and
                 exprnode.op == '-'):
             return -self._parse_constant(exprnode.expr)
+        #
+        if (isinstance(exprnode, pycparser.c_ast.BinaryOp) and
+                exprnode.op == '<<'):
+            left = self._parse_constant(exprnode.left)
+            right = self._parse_constant(exprnode.right)
+            return left << right
         # load previously defined int constant
         if (isinstance(exprnode, pycparser.c_ast.ID) and
                 exprnode.name in self._int_constants):
