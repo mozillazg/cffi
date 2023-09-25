@@ -1,3 +1,7 @@
+# ARCHIVED as of 25 Sep 2023
+This project has moved to https://github.com/python-cffi/cffi/
+
+
 CFFI
 ====
 
